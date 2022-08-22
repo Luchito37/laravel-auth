@@ -3,7 +3,9 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
+use App\Post;
 use Illuminate\Http\Request;
+use Illuminate\Support\Str;
 
 class PostController extends Controller
 {
@@ -14,7 +16,9 @@ class PostController extends Controller
      */
     public function index()
     {
-        //
+        $posts = Post::orderBy('created_at', 'desc')->get();
+
+        return view('admin.posts.index', compact("posts"));
     }
 
     /**
@@ -24,7 +28,7 @@ class PostController extends Controller
      */
     public function create()
     {
-        //
+        return view('admin.posts.create');
     }
 
     /**
@@ -35,7 +39,36 @@ class PostController extends Controller
      */
     public function store(Request $request)
     {
-        //
+        $validatedData = $request->validate([
+            "title" => "required|min:10",
+            "content" => "required|min:10"
+        ]);
+
+        $post = new Post();
+        $post->fill($validatedData);
+
+
+        $counter =0;
+
+        do {
+            $slug = Str::slug($post->title);
+
+            if($counter > 0) {
+                $slug = "-" . $counter;
+            }
+
+            $slug_exist = Post::where("slug",$slug)->first();
+
+            if($slug_exist) {
+                $counter++;
+            }else{
+                $post->slug = $slug;
+            }
+        }while ($slug_exist);
+
+        $post->save();
+
+        return redirect()->route("admin.posts.show", $post->id);
     }
 
     /**
@@ -46,7 +79,8 @@ class PostController extends Controller
      */
     public function show($id)
     {
-        //
+        $post = Post::findOrFail($id);
+        return view('admin.posts.show', compact('post'));
     }
 
     /**
@@ -57,7 +91,8 @@ class PostController extends Controller
      */
     public function edit($id)
     {
-        //
+        $post = Post::findOrFail($id);
+        return view('admin.posts.edit', compact('post'));
     }
 
     /**
